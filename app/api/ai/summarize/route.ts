@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { verifyIdToken, verifyAppCheck, db } from '../../../../lib/firebaseAdmin';
+import { verifyIdToken, verifyAppCheck, getDb } from '../../../../lib/firebaseAdmin';
 import { redact } from '../../../../lib/redact';
 import { sha256Hex } from '../../../../lib/hash';
 
@@ -40,8 +40,7 @@ export async function POST(req: NextRequest) {
       const appCheckToken = req.headers.get('x-firebase-appcheck') || undefined;
       const appCheckOk = await verifyAppCheck(appCheckToken);
       if (!appCheckOk) return NextResponse.json({ error: 'Invalid App Check token' }, { status: 401 });
-    }
-
+    }
     const { redacted, summary } = redact(text);
 
     if (!process.env.GOOGLE_API_KEY) {
@@ -62,6 +61,7 @@ export async function POST(req: NextRequest) {
     // Firestore log (avoid raw text in production)
     try {
       const hashedDocId = sha256Hex(docId || text.slice(0, 256));
+      const db = getDb();
       await db.collection('ai_logs').add({
         uid: uid || null,
         ts: Date.now(),
