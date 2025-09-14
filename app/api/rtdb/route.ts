@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
 import { getRtdb, verifyIdToken, verifyAppCheck } from "@/lib/firebaseAdmin"
 
 export const runtime = "nodejs"
@@ -18,7 +18,7 @@ async function requireAuth(req: NextRequest) {
     try {
       const decoded = await verifyIdToken(idToken)
       return { ok: true as const, who: decoded.uid }
-    } catch (e) {
+    } catch {
       // fall through to App Check
     }
   }
@@ -60,8 +60,9 @@ export async function POST(req: NextRequest) {
 
     await ref.set(payload)
     return NextResponse.json({ ok: true, mode: "set" })
-  } catch (err: any) {
-    return NextResponse.json({ ok: false, error: err?.message ?? "Unknown error" }, { status: 500 })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    return NextResponse.json({ ok: false, error: message }, { status: 500 })
   }
 }
 
@@ -76,7 +77,8 @@ export async function GET(req: NextRequest) {
 
     const snap = await getRtdb().ref(path).get()
     return NextResponse.json({ ok: true, exists: snap.exists(), value: snap.val() })
-  } catch (err: any) {
-    return NextResponse.json({ ok: false, error: err?.message ?? "Unknown error" }, { status: 500 })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    return NextResponse.json({ ok: false, error: message }, { status: 500 })
   }
 }
