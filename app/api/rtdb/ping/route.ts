@@ -1,6 +1,7 @@
 ﻿import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+export const preferredRegion = ['iad1'];
 
 export async function GET() {
   return NextResponse.json({
@@ -10,3 +11,4 @@ export async function GET() {
     at: new Date().toISOString(),
   });
 }
+

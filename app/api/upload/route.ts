@@ -1,9 +1,10 @@
-import { NextResponse, NextRequest } from 'next/server';
+﻿import { NextResponse, NextRequest } from 'next/server';
 import Busboy from 'busboy';
 import { createHash } from 'node:crypto';
 import { Readable } from 'node:stream';
 
 export const runtime = 'nodejs';
+export const preferredRegion = ['iad1'];
 
 export async function POST(request: NextRequest) {
   if (!request.body) {
@@ -53,3 +54,4 @@ export async function POST(request: NextRequest) {
     nodeStream.pipe(bb);
   });
 }
+

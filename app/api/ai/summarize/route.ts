@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { verifyIdToken, verifyAppCheck, getDb } from '../../../../lib/firebaseAdmin';
 import { redact } from '../../../../lib/redact';
@@ -11,6 +11,7 @@ interface BodyInput {
 }
 
 export const runtime = 'nodejs';
+export const preferredRegion = ['iad1'];
 
 const isProd = () => process.env.NODE_ENV === 'production';
 
@@ -82,3 +83,4 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
+
