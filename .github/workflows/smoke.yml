@@ -1,0 +1,18 @@
+name: Smoke test production
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit version endpoint
+        run: |
+          set -euxo pipefail
+          curl -fsSL https://justice-dashboard-clean.vercel.app/api/version | jq . >/dev/null || exit 1
+      - name: Ping RTDB
+        run: |
+          set -euxo pipefail
+          curl -fsSL https://justice-dashboard-clean.vercel.app/api/rtdb/ping | jq . >/dev/null || exit 1
