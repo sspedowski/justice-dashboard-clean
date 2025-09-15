@@ -1,18 +1,64 @@
-name: Smoke test production
-
+name: smoke
 on:
   push:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    env:
+      BASE_URL: https://justice-dashboard-clean.vercel.app
+      MAX_TRIES: "30"
+      SLEEP_SECS: "10"
     steps:
-      - name: Hit version endpoint
+      - name: Print context
         run: |
-          set -euxo pipefail
-          curl -fsSL https://justice-dashboard-clean.vercel.app/api/version | jq . >/dev/null || exit 1
-      - name: Ping RTDB
+          echo "GITHUB_SHA=${GITHUB_SHA}"
+          echo "BASE_URL=${BASE_URL}"
+
+      - name: Wait for /api/version to match this commit
+        shell: bash
         run: |
-          set -euxo pipefail
-          curl -fsSL https://justice-dashboard-clean.vercel.app/api/rtdb/ping | jq . >/dev/null || exit 1
+          set -euo pipefail
+          want="${GITHUB_SHA:0:12}"
+          i=0
+          while (( i < MAX_TRIES )); do
+            code=$(curl -s -o resp.json -w "%{http_code}" "${BASE_URL}/api/version")
+            echo "HTTP $code"
+            cat resp.json || true
+            echo
+            if [ "$code" = "200" ]; then
+              got=$(jq -r '.gitSha // ""' resp.json | tr -d '\r\n')
+              if [[ "$got" == *"$want"* ]]; then
+                echo "✅ version gitSha contains $want"
+                break
+              fi
+            fi
+            i=$((i+1))
+            echo "Waiting for new deploy… ($i/${MAX_TRIES})"
+            sleep "${SLEEP_SECS}"
+          done
+          if (( i == MAX_TRIES )); then
+            echo "❌ Timed out waiting for /api/version to reflect $want"
+            exit 1
+          fi
+
+      - name: Smoke /api/rtdb/ping (200 + region IAD1)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -s -D headers.txt -o body.json "${BASE_URL}/api/rtdb/ping"
+          cat body.json; echo
+          code=$(head -n1 headers.txt | awk '{print $2}')
+          xvid=$(grep -i '^x-vercel-id:' headers.txt | sed 's/.*: *//')
+          echo "HTTP=$code"
+          echo "X-Vercel-Id=$xvid"
+          if [ "$code" != "200" ]; then
+            echo "❌ ping not 200"
+            exit 1
+          fi
+          if [[ "$xvid" != *"::iad1::"* ]]; then
+            echo "❌ compute region not IAD1"
+            exit 1
+          fi
+          echo "✅ ping healthy and region is IAD1"
