@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Firebase ID Token Helper</title>
+    <meta name="robots" content="noindex" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root { color-scheme: light dark; }
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 780px; margin: 40px auto; padding: 0 16px; }
+      textarea { width: 100%; height: 160px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      button { padding: 8px 12px; margin-right: 8px; }
+      .muted { opacity: .8; font-size: .925rem; }
+      code { background: rgba(127,127,127,.15); padding: 2px 4px; border-radius: 4px; }
+      .warn { padding: 10px 12px; border: 1px solid #eab308; background: rgba(250, 204, 21, .15); border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <h1>Firebase ID Token (anonymous sign‑in)</h1>
+    <p class="muted">This page signs in <strong>anonymously</strong> and prints an ID token for the Firebase project you configure below.</p>
+
+    <div class="warn">
+      <strong>Security note:</strong> This helper is for local testing. Remove this page after you’re done (or restrict to preview deployments).
+    </div>
+
+    <h3>1) Paste your Firebase Web Config</h3>
+    <p class="muted">Find it in Firebase Console → Project settings → Your apps → Web app. These values are <em>public</em> and safe to expose.</p>
+    <pre id="cfg" class="muted cfg">
+const firebaseConfig = {
+  apiKey: "YOUR_PUBLIC_WEB_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};</pre>
+
+    <h3>2) Sign in and copy the token</h3>
+    <p>
+      <button id="signin">Sign in anonymously</button>
+      <button id="copy" disabled>Copy token</button>
+    </p>
+    <textarea id="tok" placeholder="Token will appear here…" readonly></textarea>
+
+    <script type="module">
+      // ===== Replace the config below with your project's public web config =====
+      const firebaseConfig = {
+        apiKey: "YOUR_PUBLIC_WEB_API_KEY",
+        authDomain: "YOUR_PROJECT.firebaseapp.com",
+        projectId: "YOUR_PROJECT",
+        storageBucket: "YOUR_PROJECT.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+      };
+
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+      import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+
+      const $signin = document.getElementById('signin');
+      const $copy = document.getElementById('copy');
+      const $tok = document.getElementById('tok');
+
+      $signin.onclick = async () => {
+        $signin.disabled = true;
+        try {
+          await signInAnonymously(auth);
+        } catch (e) {
+          $signin.disabled = false;
+          alert("Sign-in failed: " + (e?.message || e));
+        }
+      };
+
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) return;
+        const token = await user.getIdToken(true);
+        $tok.value = token;
+        $copy.disabled = token.length > 0;
+        console.log("ID TOKEN:", token);
+        $copy.disabled = false;
+      });
+
+      $copy.onclick = async () => {
+        await navigator.clipboard.writeText($tok.value || "");
+        $copy.textContent = "Copied!";
+        setTimeout(() => ($copy.textContent = "Copy token"), 1200);
+      };
+    </script>
+  </body>
+</html>
