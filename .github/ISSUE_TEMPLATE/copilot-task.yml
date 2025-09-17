@@ -1,0 +1,33 @@
+name: "Copilot Task"
+description: "A well-scoped unit of work for the Copilot coding agent"
+labels: ["copilot", "automated"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What is the current behavior and why change it?
+    validations: { required: true }
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Exact, testable criteria (what must pass, what must change)
+      placeholder: |
+        - Lint, typecheck, unit tests pass
+        - E2E spec added for bug X
+        - Update docs/README section Y
+    validations: { required: true }
+  - type: textarea
+    id: files
+    attributes:
+      label: Files to touch
+      description: Narrow the scope so Copilot changes the right places
+      placeholder: |
+        - src/components/Foo.tsx
+        - src/lib/bar.ts
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: Call out any risky areas or unrelated work
